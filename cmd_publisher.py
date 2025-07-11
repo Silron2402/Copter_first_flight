@@ -12,11 +12,11 @@ import tf
 class CMdVelPublisher:
     def __init__(self):
         self.pose_pub = rospy.Publisher('/vehicle/desPose', PoseStamped, queue_size=10)
-        self.rate = rospy.Rate(20)
+        self.rate = rospy.Rate(10)
 
     def run(self):
         start_time = time.time()
-        circle_radius = 5
+        circle_radius = 2
         counter = 0
         counter_step = 0.01
         while not rospy.is_shutdown():
