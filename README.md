@@ -146,6 +146,7 @@
 
 ![img.png](project_images/image27.png)
 Рисунок 27 Окно терминала после выполнения команды git push
+
 Вид репозитория на платформе github представлен на рисунке 28.
 а)                                                                
 ![img.png](project_images/image28a.png)  
@@ -232,6 +233,7 @@
 
 ![img.png](project_images/image43.png)
 Рисунок 43. Выпадающий список для выбора ветки для слияния.
+
 Перед операцией pull request можно указать название операции в окне add a title и добавить описание в окне add a description как показано на рисунке 44. 
 
 ![img.png](project_images/image44.png)
