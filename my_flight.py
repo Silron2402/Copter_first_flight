@@ -36,46 +36,13 @@ class FlightCommander:
         
         self.kp = 0.05 #коэффициент П-регулятора
         
-        # Инициализация потока для отправки точек назначения
-        self.setpoint_thread = None
-        self.stop_thread = False
-        
         # Ожидание доступности сервисов ROS
         rospy.wait_for_service('/mavros/cmd/arming')
         rospy.wait_for_service('/mavros/set_mode')
         
-    # Запуск потока для отправки точек назначения    
-    def start_setpoint_thread(self):
-        self.stop_thread = False
-        self.setpoint_thread = Thread(target=self.send_setpoints_loop)
-        self.setpoint_thread.start()
-
-    # Остановка потока отправки точек назначения
-    def stop_setpoint_thread(self):
-        self.stop_thread = True
-        if self.setpoint_thread:
-            self.setpoint_thread.join()
-            self.setpoint_thread = None
-
-    # Цикл отправки целевого положения
-    def send_setpoints_loop(self, target_rate: float=20):
-        rate = rospy.Rate(target_rate)  
-        while not self.stop_thread and not rospy.is_shutdown():
-            if self._setpoint is None:
-                continue
-            if self.current_state.armed == False:
-                self.arm_vehicle
-            self.setpoint_pub.publish(self._setpoint)
-            rate.sleep()
-        self._setpoint = None
-    
     # Обратный вызов для обновления текущего состояния дрона
     def state_callback(self, msg):
         self.current_state = msg
-        # if msg.mode == "OFFBOARD" and self.setpoint_thread is None:
-        #     self.start_setpoint_thread()
-        if msg.mode != "OFFBOARD" and self.setpoint_thread is not None:
-            self.stop_setpoint_thread()
     
     # Обратный вызов для обновления текущей позиции дрона    
     def pose_callback(self, msg):
@@ -84,41 +51,6 @@ class FlightCommander:
     #обработка данных топика /vehicle/desPose
     def recieved_task(self, msg):
         self._recieved = msg  
-        if (not self._recieved is None) and (not self.pose is None):
-            #расчет ошибки по положению
-            err_x = self._recieved.pose.position.x - self.pose.pose.position.x
-            err_y = self._recieved.pose.position.y - self.pose.pose.position.y
-            err_z = self._recieved.pose.position.z - self.pose.pose.position.z
-            q = self.pose.pose.orientation.x, self.pose.pose.orientation.y,self.pose.pose.orientation.z,self.pose.pose.orientation.w
-            roll, pitch, yaw = t.euler_from_quaternion(q)
-            print(yaw)
-            self.w = self.pose.pose.orientation.w
-            self.target_yaw = math.atan2(self._recieved.pose.position.x,self._recieved.pose.position.y)
-            err_yaw = self.target_yaw - yaw
-            print(f'Целевой угол рыскания {self.target_yaw}') 
-            print(f'Фактический угол рыскания {yaw}') 
-            print(f'текущая координата x {self.pose.pose.position.y}') 
-            print(f'текущая координата y {self.pose.pose.position.y}') 
-            print(f'текущая координата z {self.pose.pose.position.z}') 
-            print(f'требуемая координата z {self._recieved.pose.position.z}') 
-            print(f'текущая ошибка по координате x {err_x}') 
-            print(f'текущая ошибка по координате y {err_y}') 
-            print(f'текущая ошибка по координате z {err_z}') 
-           #целевые скорости в абсолютных координатах
-            V_x_target = err_x * 1
-            V_y_target = err_y * 1
-            V_z_target = err_z * 0.08
-            #Целевые скорости в локальных координатах
-        
-            self.target_Vx = V_x_target * math.cos(yaw) +  V_y_target * math.sin(yaw)#err_x * self.kp
-            self.target_Vy = -V_x_target * math.sin(yaw) + V_y_target * math.cos(yaw)#err_y * self.kp
-            self.target_Vz = err_z * 0.08
-            self.target_yaw_rate =  err_yaw * 0.01
-
-        #except rospy.ServiceException as e:   
-            #print(f'желаемая позиция x {self.tack_pose.pose.position.x}')
-        #print(self.pose.pose.pose.position.x) 
-     
         
     def land_vehicle(self):
         rospy.wait_for_service('/mavros/cmd/land')
